@@ -9,3 +9,6 @@ EXPOSE 80
 
 # Start Apache in foreground
 CMD ["apache2-foreground"]
+
+FROM devopsedu/webapp:latest
+COPY website/ /var/www/html/
