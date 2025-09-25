@@ -18,6 +18,16 @@
         state: present
         update_cache: yes
 
+    - name: Remove old Docker repo if exists
+      file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+
+    - name: Remove old Docker key if exists
+      file:
+        path: /usr/share/keyrings/docker-archive-keyring.gpg
+        state: absent
+
     - name: Add Docker’s official GPG key
       get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -46,3 +56,4 @@
         name: docker
         state: started
         enabled: yes
+
