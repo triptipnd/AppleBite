@@ -37,11 +37,12 @@ pipeline {
             }
         }
 
-        stage('Job 3 - Build Docker Image') {
-            steps {
-                sh "docker build -t ${IMAGE_NAME} ."
-            }
-        }
+       stage('Job 3 - Build Docker Image') {
+    steps {
+        sh "docker build -t ${IMAGE_NAME} ."
+    }
+}
+
 
         stage('Job 3 - Deploy to Test Server') {
             steps {
@@ -120,9 +121,8 @@ pipeline {
         }
 
         stage('Job 3 - Build Docker Image') {
-            steps {
-                sh "docker build
-	{
+    steps {
         sh "docker build -t ${IMAGE_NAME} ."
-    	}
-	}
+    }
+}
+
