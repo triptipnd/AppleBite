@@ -87,3 +87,17 @@ Configure Jenkins with the repository and pipeline.
 Set the PROD_SERVER parameter (if required) in Jenkins.
 
 Trigger the pipeline – it will handle build and deployment automatically.
+
+
+## Screenshots
+
+### Homepage
+![Homepage Screenshot](screenshots/website_home.png)
+
+## Screenshots
+
+### Docker runing
+![Homepage Screenshot](screenshots/docker_running.png)
+
+### Jenkins Pipeline
+![Homepage Screenshot](screenshots/jenkins_pipeline.png)
