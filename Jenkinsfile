@@ -2,39 +2,31 @@ pipeline {
     agent any
 
     environment {
-        SSH_CRED_ID   = 'jenkins-ssh'
-        TEST_SERVER   = '172.18.54.197'
-        PROD_SERVER   = "${env.PROD_SERVER}"
-        IMAGE_NAME    = "myphpapp:latest"
-        CONTAINER_NAME = "php-webapp"
-        GIT_REPO      = 'https://github.com/triptipnd/AppleBite.git'
+        TEST_SERVER = '172.18.54.197'
+        PROD_SERVER = ' 172.17.0.1' // replace with actual PROD server IP
+        IMAGE_NAME  = 'myphpapp:latest'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: "${GIT_REPO}"
+                checkout([$class: 'GitSCM', 
+                    branches: [[name: 'main']], 
+                    userRemoteConfigs: [[url: 'https://github.com/triptipnd/AppleBite.git']]])
             }
         }
 
         stage('Job 1 - Install Puppet Agent') {
             steps {
-                sh '''
                 echo "Installing puppet agent on test server..."
-                ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} \
-                  "sudo apt-get update && sudo apt-get install -y puppet-agent || true"
-                '''
+                sh "ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} sudo apt-get update && sudo apt-get install -y puppet-agent || true"
             }
         }
 
         stage('Job 2 - Install Docker via Ansible') {
             steps {
-                sh '''
-                echo "[testserver]
-                ${TEST_SERVER} ansible_user=jenkins ansible_ssh_common_args='-o StrictHostKeyChecking=no'" > inventory_test
-
-                ansible-playbook -i inventory_test ansible/install-docker.yml --ssh-extra-args='-o StrictHostKeyChecking=no'
-                '''
+                echo "[testserver]\n${TEST_SERVER} ansible_user=jenkins ansible_ssh_common_args='-o StrictHostKeyChecking=no'" > inventory_test
+                sh "ansible-playbook -i inventory_test ansible/install-docker.yml --ssh-extra-args='-o StrictHostKeyChecking=no'"
             }
         }
 
@@ -46,37 +38,47 @@ pipeline {
 
         stage('Job 4 - Deploy to Test Server') {
             steps {
+                echo "Deploying Docker image to TEST server..."
                 sh """
-                ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
-                docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} 'bunzip2 | docker load'
-                ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                    ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} docker rm -f php-webapp || true
+                    docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} 'bunzip2 | docker load'
+                    ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} docker run -d -p 80:80 --name php-webapp ${IMAGE_NAME}
                 """
             }
         }
 
         stage('Job 5 - Deploy to Prod Server') {
-            when {
-                expression { return env.PROD_SERVER && env.PROD_SERVER.trim() != "" }
-            }
             steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
-                docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} 'bunzip2 | docker load'
-                ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
-                """
+                script {
+                    if (env.PROD_SERVER?.trim()) {
+                        echo "Deploying to PROD server: ${env.PROD_SERVER}"
+                        sh """
+                            ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} docker rm -f php-webapp || true
+                            docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} 'bunzip2 | docker load'
+                            ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} docker run -d -p 80:80 --name php-webapp ${IMAGE_NAME}
+                        """
+                    } else {
+                        echo "PROD_SERVER variable not set. Skipping PROD deployment."
+                    }
+                }
             }
         }
     }
 
     post {
+        always {
+            echo "Cleaning up test/prod containers..."
+            sh "ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} docker rm -f php-webapp || true"
+            if (env.PROD_SERVER?.trim()) {
+                sh "ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} docker rm -f php-webapp || true"
+            }
+        }
         failure {
-            sh """
-            echo "Pipeline failed — cleaning up test/prod containers."
-            ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
-            if [ -n "${PROD_SERVER}" ]; then
-              ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
-            fi
-            """
+            echo "Pipeline failed!"
+        }
+        success {
+            echo "Pipeline completed successfully!"
         }
     }
 }
+
