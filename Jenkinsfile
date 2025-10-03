@@ -85,18 +85,3 @@ pipeline {
         }
     }
 }
-
-#post {
-    #always {
-     #   sh """
-      #  echo "Cleaning up containers..."
-        # Remove stopped containers on Test Server
-       # ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} 'docker container prune -f'
-        
-        # Remove stopped containers on Prod Server, if defined
-        #if [ -n "${PROD_SERVER}" ]; then
-         #   ssh -o StrictHostKeyChecking=no jenkins@${PROD_SERVER} 'docker container prune -f'
-        #fi
-        #"""
-    #}
-#}
