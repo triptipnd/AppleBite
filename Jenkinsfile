@@ -122,3 +122,7 @@ pipeline {
         stage('Job 3 - Build Docker Image') {
             steps {
                 sh "docker build
+	{
+        sh "docker build -t ${IMAGE_NAME} ."
+    	}
+	}
