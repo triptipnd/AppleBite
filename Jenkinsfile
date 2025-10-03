@@ -24,16 +24,20 @@ pipeline {
         }
 
 		stage('Install Docker via Ansible on Test Server') {
-		steps {
-			sh """
-			echo -e "[testserver]\\n${TEST_SERVER} ansible_user=jenkins" > inventory_test
-			# Disable SSH host key checking for this run
-			export ANSIBLE_HOST_KEY_CHECKING=False
-			# Run the Ansible playbook
-			ansible-playbook -i inventory_test ansible/install-docker.yml
-			"""
-			 }
-		}
+			    steps {
+			        sh """
+			        echo "[testserver]" > inventory_test
+			        echo "${TEST_SERVER} ansible_user=jenkins ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory_test
+
+			        # Disable SSH host key checking globally for this run
+			        export ANSIBLE_HOST_KEY_CHECKING=False
+
+			        # Run the Ansible playbook
+			        ansible-playbook -i inventory_test ansible/install-docker.yml
+			        """
+			    }
+			}
+
 
 
         stage('Build Docker Image') {
