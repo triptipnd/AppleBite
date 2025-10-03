@@ -1,14 +1,4 @@
-# Use the base PHP-Apache image
-FROM devopsedu/webapp
-
-# Copy your PHP application code into the web root
-COPY . /var/www/html/
-
-# Expose Apache port
-EXPOSE 80
-
-# Start Apache in foreground
-CMD ["apache2-foreground"]
-
-FROM devopsedu/webapp:latest
+FROM php:8.2-apache
 COPY website/ /var/www/html/
+EXPOSE 80
+CMD ["apache2-foreground"]

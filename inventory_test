@@ -1,0 +1,2 @@
+[testserver]
+172.18.54.197 ansible_user=jenkins

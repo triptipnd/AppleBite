@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+	 environment {
+        // Set these in the Jenkins job configuration or Credentials / Global properties.
+        // Replace with your real Jenkins SSH credential id if you use ssh-agent/credentials plugin.
+        SSH_CRED_ID = 'jenkins-ssh'         // Jenkins SSH credential id (private key) for ssh jenkins@<server>
+        TEST_SERVER = '172.18.54.197'       // test server IP (you already used this)
+        PROD_SERVER = "${env.PROD_SERVER}"  // set this as Jenkins global env or job parameter if you have a prod server; otherwise leave empty to skip
+        IMAGE_NAME = "myphpapp:latest"
+        CONTAINER_NAME = "php-webapp"
+        GIT_REPO = 'https://github.com/triptipnd/AppleBite.git'
+    }
+	
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t myphpapp:latest .'
+            }
+        }
+
+        stage('Deploy to Test Server') {
+            steps {
+                sh 'ssh jenkins@172.18.54.197 docker rm -f php-webapp || true'
+                sh 'ssh jenkins@172.18.54.197 docker run -d -p 80:80 --name php-webapp myphpapp:latest'
+            }
+        }
+    }
+}
