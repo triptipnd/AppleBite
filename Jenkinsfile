@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         TEST_SERVER = "172.18.54.197"
-        PROD_SERVER = "${env.PROD_SERVER}"  // Pass PROD_SERVER as a parameter in Jenkins if available
+        PROD_SERVER = "192.168.1.100"  // Pass PROD_SERVER as a parameter in Jenkins if available
         IMAGE_NAME = "myphpapp:latest"
     }
 
