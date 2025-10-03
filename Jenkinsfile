@@ -43,16 +43,15 @@ pipeline {
     }
 }
 
-
-        stage('Job 3 - Deploy to Test Server') {
-            steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
-                docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} 'bunzip2 | docker load'
-                ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
-                """
-            }
-        }
+stage('Job 3 - Deploy to Test Server') {
+    steps {
+        sh """
+        ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker rm -f ${CONTAINER_NAME} || true"
+        docker save ${IMAGE_NAME} | bzip2 | ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} 'bunzip2 | docker load'
+        ssh -o StrictHostKeyChecking=no jenkins@${TEST_SERVER} "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+        """
+    }
+}
 
         stage('Job 4 - Deploy to Prod Server') {
             when {
